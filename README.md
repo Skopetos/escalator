@@ -45,7 +45,9 @@ network discovery and local enumeration used along the way.
 | `enum.go`        | Local privilege-escalation enumerator (`enum` command)             |
 | `output.go`      | Terminal formatting / reporting helpers                             |
 | `scripts/cmd.php`| Minimal PHP web shell used for the initial foothold                 |
+| `scripts/enum.sh`| Bash fallback enumerator (when you can't drop the Go binary)        |
 | `Makefile`       | `make build` / `make static` helpers                               |
+| `images/`        | Proof screenshots referenced by the report                         |
 | `README.md`      | This document                                                       |
 
 ---
@@ -77,6 +79,14 @@ Both are used in the walkthrough below.
 > mismatches. The enumerator reimplements the parts of LinPEAS most relevant to
 > this box (SUID/SGID, `sudo -l` + GTFOBins matching, capabilities, cron,
 > writable-file and PATH checks, credential hunting) as auditable source.
+
+**Bash fallback.** If you can't get the Go binary onto the target (no `scp`,
+locked-down box), `scripts/enum.sh` runs the same checks using only coreutils:
+
+```bash
+scp scripts/enum.sh shrek@TARGET:/tmp/    # or paste it in
+bash /tmp/enum.sh
+```
 
 ---
 
@@ -292,6 +302,33 @@ anonymous FTP write → PHP web shell (RCE as www-data)
    → read /.runme.sh  → crack MD5  → shrek's password
       → SSH as shrek  → sudo NOPASSWD python3.5  → root
 ```
+
+### Proof screenshots
+
+Capture these from your booted VM for the audit and drop them in `images/`
+(filenames referenced below). Each renders inline once the file exists.
+
+| Screenshot                     | What it should show                                   |
+|--------------------------------|-------------------------------------------------------|
+| `images/01-discovery.png`      | Host/port scan revealing the VM's IP and 21/22/80     |
+| `images/02-ftp-upload.png`     | Anonymous FTP login and `put cmd.php`                 |
+| `images/03-rce-www-data.png`   | `curl .../cmd.php?c=id` returning `uid=33(www-data)`  |
+| `images/04-runme-cred.png`     | `/.runme.sh` output showing the `shrek:MD5` line      |
+| `images/05-ssh-shrek.png`      | SSH session as `shrek` + `sudo -l` output             |
+| `images/06-root-flag.png`      | Root shell (`id` → `uid=0`) and `cat /root/root.txt`  |
+
+<!-- Uncomment once the files are added:
+![IP discovery](images/01-discovery.png)
+![Anonymous FTP upload](images/02-ftp-upload.png)
+![RCE as www-data](images/03-rce-www-data.png)
+![Recovered credential](images/04-runme-cred.png)
+![SSH as shrek and sudo -l](images/05-ssh-shrek.png)
+![Root shell and flag](images/06-root-flag.png)
+-->
+
+> The single most important shot is `06-root-flag.png`: a prompt showing
+> `uid=0(root)` next to the flag from `/root/root.txt`. That is the proof of
+> root access the report and audit ask for.
 
 ---
 
