@@ -1,0 +1,12 @@
+# Provided lab materials (not part of the submission)
+info.md
+audit.md
+01-Local.ova
+*.ova
+*.vmdk
+*.utm
+*.raw
+
+# Compiled Go binary and build artifacts
+/escalator
+escalator-static
